@@ -9,6 +9,10 @@ app = FastAPI()
 # Register all routes from endpoints.py
 app.include_router(router)
 
-@app.get("/")
-def read_root():
-    return {"message": "Hello World"}
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "rag-backend-api",
+        "version": "1.0.0"
+    }
