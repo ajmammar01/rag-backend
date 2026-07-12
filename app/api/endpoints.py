@@ -62,6 +62,16 @@ async def query(request: QueryRequest):
     # Step 2: Retrieve relevant chunks from ChromaDB for each expanded query
     retrieved_chunks = query_retrieval(collection_name=request.collection_name, queries=expanded_queries)
 
+    # If no chunks were found across any expanded queries, short-circuit immediately
+    if not retrieved_chunks:
+        return {
+            "original_query": request.question,
+            "expanded_queries": expanded_queries,
+            "retrieved_chunks": [],
+            "reranked_chunks": [],
+            "final_answer": "I couldn't find any relevant documents matching your request to answer this question."
+        }
+    
     # Step 3: Rerank the retrieved chunks based on relevance to the original query
     reranked_chunks = rerank_documents(original_query=request.question, unique_documents=retrieved_chunks)
 

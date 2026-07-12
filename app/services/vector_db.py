@@ -1,6 +1,7 @@
 # app/services/vector_db.py
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from fastapi import HTTPException
 
 # 1. Initialize the persistent client pointing to your local directory
 # This creates a folder named 'chroma_db' in your project root
@@ -37,7 +38,10 @@ def query_retrieval(collection_name: str, queries: list[str], n_results: int = 1
     Returns a list of the top n_results matching text chunks.
     """
     # 1. Get the collection by name
-    chroma_collection = chroma_client.get_collection(name=collection_name)
+    try:    
+        chroma_collection = chroma_client.get_collection(name=collection_name)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Collection not found. Please upload the PDF first to create the collection.")
     
     # 2. Perform a similarity search using the embedding function
     results = chroma_collection.query(
