@@ -1,10 +1,14 @@
 from fastapi import APIRouter, UploadFile, File
 from app.services.pdf_worker import extract_text_from_pdf, chunk_text
 from pydantic import BaseModel
-from app.services.vector_db import save_chunks_to_vector_store
+from app.services.vector_db import save_chunks_to_vector_store, query_retrieval
+from app.services.reranker import rerank_documents
+from app.services.llm_client import expand_query, rag
+
 
 class QueryRequest(BaseModel):
     question: str
+    collection_name: str
 
     
 router = APIRouter()
@@ -46,7 +50,28 @@ async def upload_file(file: UploadFile = File(...)):
 
 @router.post("/query")
 async def query(request: QueryRequest):
+    """
+    Accepts a user query, expands it into multiple variations,
+    retrieves relevant chunks from ChromaDB, reranks them,
+    and finally uses RAG to generate a final answer.
+    """
+
+    # Step 1: Expand the user's query into multiple variations
+    expanded_queries = expand_query(request.question)
+
+    # Step 2: Retrieve relevant chunks from ChromaDB for each expanded query
+    retrieved_chunks = query_retrieval(collection_name=request.collection_name, queries=expanded_queries)
+
+    # Step 3: Rerank the retrieved chunks based on relevance to the original query
+    reranked_chunks = rerank_documents(original_query=request.question, unique_documents=retrieved_chunks)
+
+    # Step 4: Use RAG to generate a final answer based on the reranked chunks
+    final_answer = rag(query=request.question, retrieved_chunks=reranked_chunks)
+
     return {
-        "question": request.question,
-        "answer": "This is a placeholder answer."
+        "original_query": request.question,
+        "expanded_queries": expanded_queries,
+        "retrieved_chunks": retrieved_chunks,
+        "reranked_chunks": reranked_chunks,
+        "final_answer": final_answer
     }

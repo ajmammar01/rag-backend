@@ -28,3 +28,26 @@ def save_chunks_to_vector_store(collection_name: str, token_split_texts: list[st
     
     # 6. Return the updated total count to confirm it worked
     return chroma_collection.count()
+
+
+
+def query_retrieval(collection_name: str, queries: list[str], n_results: int = 10) -> list[str]:
+    """
+    Queries the local ChromaDB collection for the most relevant text chunks based on the input query.
+    Returns a list of the top n_results matching text chunks.
+    """
+    # 1. Get the collection by name
+    chroma_collection = chroma_client.get_collection(name=collection_name)
+    
+    # 2. Perform a similarity search using the embedding function
+    results = chroma_collection.query(
+        query_texts=queries,
+        n_results=n_results
+    )
+    
+    # 3. Extract and return the matching documents (text chunks)
+    # Because Multi-Query returns a list of lists, we flatten and use dict.fromkeys() 
+    # to preserve ordering while eliminating duplicate chunks.
+    raw_documents = [doc for sublist in results['documents'] for doc in sublist]
+    retrieved_documents = list(dict.fromkeys(raw_documents))
+    return retrieved_documents
