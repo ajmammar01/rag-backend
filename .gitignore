@@ -3,3 +3,12 @@
 venv
 __pychache__/
 
+# Python cache files
+__pycache__/
+*.pyc
+
+# Local Chroma vector database
+chroma_db/
+
+# Local environment variables
+.env
