@@ -19,21 +19,14 @@ COPY pyproject.toml uv.lock ./
 # 6. Install all dependencies inside the container
 RUN uv sync --frozen --no-install-project
 
-# Create a non-root user for Hugging Face security compliance
-RUN useradd -m -u 1000 user
-USER user
-ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH
-WORKDIR $HOME/app
-
 # 7. Copy your actual code over
-COPY --chown=user app/ ./app/
+COPY app/ ./app/
 
 # 8. Create a blank folder where your vector database will persist its data
-RUN mkdir -p $HOME/app/chroma_db
+RUN mkdir -p /app/chroma_db
 
 # 9. Tell the container to expose the network port FastAPI uses
-EXPOSE 7860
+EXPOSE 8000
 
 # 10. The command that boots up your server when the container starts
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
