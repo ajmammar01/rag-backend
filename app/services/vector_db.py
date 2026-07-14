@@ -1,15 +1,18 @@
 # app/services/vector_db.py
 import chromadb
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from fastapi import HTTPException
+import os
 
 # 1. Initialize the persistent client pointing to your local directory
 # This creates a folder named 'chroma_db' in your project root
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 
 # 2. Select the local embedding model (defaults to all-MiniLM-L6-v2)
-embedding_function = SentenceTransformerEmbeddingFunction()
-
+embedding_function = OpenAIEmbeddingFunction(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    model_name="text-embedding-3-small"
+)
 def save_chunks_to_vector_store(collection_name: str, token_split_texts: list[str]) -> int:
     """
     Takes a list of text chunks, embeds them locally, and saves them to ChromaDB.
